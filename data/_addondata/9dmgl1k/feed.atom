@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+<title>Test CMS gpEASY</title>
+<link href="http://localhost/gpeasy/data/_addondata/9dmgl1k/feed.atom" rel="self" />
+<link href="http://localhost/gpeasy/index.php/Blog" />
+<id>urn:uuid:a40cf321-189d-c6c8-0af3-e37a9f7bd36b</id>
+<updated>2015-05-25T21:24:44+00:00</updated>
+<author><name>Test CMS gpEASY</name></author>
+<entry>
+<title>Test Bloga</title>
+<link href="http://localhost/gpeasy/index.php/Blog?id=1"></link>
+<id>urn:uuid:c4ca4238-a0b9-2382-0dcc-509a6f75849b</id>
+<updated>2015-05-25T21:24:44+00:00</updated>
+<summary type="html"><![CDATA[Bummmm Test]]></summary>
+</entry>
+</feed>

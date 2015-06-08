@@ -1,0 +1,1 @@
+<h3><a href="/gpeasy/index.php/Blog" title="Blog">Blog</a></h3><b class="simple_blog_title"><a href="/gpeasy/index.php/Blog?id=1" >Test Bloga</a></b> <div class="simple_blog_info"> <span class="simple_blog_subtitle">Mod 1</span>  <span class="space"> | </span>  <span class="simple_blog_date"></span>   </div><p class="simple_blog_abbrev">Bummmm Test</p>

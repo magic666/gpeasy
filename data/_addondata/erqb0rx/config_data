@@ -1,0 +1,22 @@
+<?php
+defined('is_running') or die('Not an entry point...');
+$fileVersion = '4.4';
+$fileModTime = '1432590681';
+$file_stats = array (
+  'created' => 1432590319,
+  'gpversion' => '4.4',
+  'modified' => 1432590681,
+  'username' => 'Magic',
+);
+
+$event_settings = array (
+  'language' => 1,
+  'event_list_page_tile' => 'Testy',
+  'show_event_list_page_tile' => true,
+  'event_yearly_view_page_tile' => 'Testy',
+  'show_event_yearly_view_page_tile' => true,
+  'highlight_today' => true,
+  'show_gadget_header' => true,
+  'show_gadget_footer' => false,
+);
+

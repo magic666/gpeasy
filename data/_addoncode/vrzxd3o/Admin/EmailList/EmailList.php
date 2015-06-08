@@ -1,0 +1,353 @@
+<?php
+defined('is_running') or die('Not an entry point...');
+
+gpPlugin::incl('EasyNewsLetter.php');
+
+class EasyNewsLetter_EmailList extends EasyNewsLetter {
+
+	private $email; // string
+
+	private $start; // int
+	private $end; // int
+	private $total; // int
+	private $total_pages; // int
+	private $current_page; // int
+
+	private $import_show; // bool
+	private $import_addresses; // array
+
+	public function __construct() {
+
+		parent::__construct();
+
+		$this->getAddresses();
+
+		// Switch
+		if ($this->doSwitcher()) {
+			if ($this->getEmail()) {
+				$this->switcher();
+			}
+		}
+
+		if ($this->doUnsubscribe()) { 
+			if ($this->isValidUnsubscribe()) {
+				$this->Unsubscribe();
+			} 
+		}
+
+		if ($this->doImportSubscribers()) { 
+			if ($this->isValidImportSubscribers()) {
+				$this->ImportSubscribers();
+			} 
+		}
+		
+		$this->doShowImportForm();
+		$this->paginateEmailList();
+		$this->showEmailList();
+
+	}
+
+	/////////////////////////////////////////////////////////////////////
+	// PRIVATE METHODS
+	/////////////////////////////////////////////////////////////////////
+
+	private function doImportSubscribers() {
+
+		return (isset($_POST['cmd']) && ($_POST['cmd'] == 'import_subscribers') ? true : false);
+
+	}
+
+	private function doSwitcher() {
+
+		return (isset($_POST['cmd']) && ($_POST['cmd'] == 'switcher') ? true : false);
+
+	}
+
+	private function getEmail() {
+
+		global $langmessage;
+
+		if (!isset($_POST['email'])) {
+			message($langmessage['OOPS']);
+			return false;
+		}
+
+		$email = $_POST['email'];
+
+		if (!isset($this->addresses[$email])) {
+			$from_email = htmlentities($from_email);
+			message(sprintf('The given mail address %s does not exist.', $email));
+			return false;
+		}
+
+		$this->email = $email;
+
+		return true;
+
+	}
+
+	private function switcher() {
+
+		global $addonDataFolder;
+
+		$this->addresses[$this->email]['activated'] = 1 - $this->addresses[$this->email]['activated'];
+		$filename = $addonDataFolder."/addresses.dump";
+		gpFiles::SaveArray($filename,'addresses',$this->addresses);
+
+		switch ($this->addresses[$this->email]['activated']) {
+			case 1:
+				$message = sprintf('The subscription (%s) is activated.', $this->email);
+				break;
+			case 0:
+				$message = sprintf('The subscription (%s) is deactivated.', $this->email);
+				break;
+			default:
+				$message = 'Unknown'; // just in case...
+				break;				
+		}
+
+		message($message);
+
+	}
+
+	private function doUnsubscribe() {
+
+		return isset($_GET['cmd']) && ($_GET['cmd'] == 'unsubscribe');
+
+	}
+
+	private function isValidUnsubscribe() {
+
+		global $addonDataFolder;
+		
+		if(isset($_GET['nl_email'])) {
+			$nl_email = $_GET['nl_email'];
+		} else {
+			message('No mail address given.');
+			return false;
+		}
+
+		if (!$this->isValidEmail($nl_email)) {
+			$nl_email = htmlentities($nl_email);
+			message(sprintf('The given mail address %s is not valid.', $nl_email));
+			return false;
+		}
+			
+		if(!array_key_exists($nl_email, $this->addresses)) {
+			message(sprintf('The given mail address %s does not exist.', $nl_email));
+			return false;
+		}
+
+		$this->email = $nl_email;
+
+		return true;
+
+	}
+	
+	private function unsubscribe(){
+		
+		global $addonDataFolder;
+
+		unset($this->addresses[$this->email]);
+		 
+		$filename = $addonDataFolder."/addresses.dump";
+		gpFiles::SaveArray($filename,'addresses',$this->addresses);
+
+		message(sprintf('The newsletter won\'t be sent to %s anymore.', $this->email));
+
+	}
+
+	private function paginateEmailList() {
+
+		$total = count($this->addresses);
+		$len = $this->config['email_list_paginate'];;
+		$total_pages = ceil($total/$len);
+		$current_page = 0;
+		if( isset($_REQUEST['pg']) && is_numeric($_REQUEST['pg']) ){
+			if( $_REQUEST['pg'] <= $total_pages ){
+				$current_page = $_REQUEST['pg'];
+			}else{
+				$current_page = ($total_pages-1);
+			}
+		}
+		$start = $current_page*$len;
+		$end = min($start+$len,$total);
+
+		$this->addresses = array_slice($this->addresses,$start,$len,true);
+
+		$this->start = $start;
+		$this->end = $end;
+		$this->total = $total;
+		$this->total_pages = $total_pages;
+		$this->current_page = $current_page;
+
+	}
+
+	private function doShowImportForm() {
+
+		global $config, $dataDir;
+
+		if ($this->config['hide_import_form']) {
+			$this->import_show = false;
+			return;
+		}
+
+		$addons_filtered = array_filter($config['addons'], array($this, '_callbackAddonName'));
+
+		if (empty($addons_filtered)) {
+			$this->import_show = false;
+			return;
+		}
+
+		reset($addons_filtered);
+		$key = key($addons_filtered);
+		//$folder = $addons_filtered[$key]['data_folder'];
+		//$filename = $dataDir.'/data/_addondata/'.$folder."/addresses.dump";
+		$filename = $dataDir.'/data/_addondata/'.$key."/addresses.dump";
+
+		if (!file_exists($filename)) {
+			$this->import_show = false;
+			return;
+		}
+
+		include($filename);
+
+		if (!isset($addresses) || empty($addresses)) {
+			$this->import_show = false;
+			return;
+		}
+
+		$this->import_show = true;
+
+		unset($addresses);
+
+	}
+
+	private function isValidImportSubscribers() {
+
+		global $config, $dataDir;
+
+		$addons_filtered = array_filter($config['addons'], array($this, '_callbackAddonName'));
+
+		if (empty($addons_filtered)) {
+			return false;
+		}
+
+		reset($addons_filtered);
+		$key = key($addons_filtered);
+		//$folder = $addons_filtered[$key]['data_folder'];
+		//$filename = $dataDir.'/data/_addondata/'.$folder."/addresses.dump";
+		$filename = $dataDir.'/data/_addondata/'.$key."/addresses.dump";
+
+		if (!file_exists($filename)) {
+			return false;
+		}
+
+		include($filename);
+
+		if (!isset($addresses) || empty($addresses)) {
+			return false;
+		}
+
+		$this->import_addresses = array_unique(array_keys($addresses));
+
+		unset($addresses);
+
+		return true;
+
+	}
+
+	private function importSubscribers() {
+
+		global $addonDataFolder, $addonPathData;
+
+		$time = time();
+
+		$i = 0;
+
+		// Add new subscribers
+		foreach ($this->import_addresses as $email) {
+
+			if (!$this->isValidEmail($email)) {
+				continue;
+			}
+
+			if (isset($this->addresses[$email])) {
+				continue;
+			}
+
+			while (($key = $this->makeRandomKey()) === false);
+
+			$this->addresses[$email]['key'] = $key;
+			$this->addresses[$email]['datetime'] = $time;
+			$this->addresses[$email]['sent'] = 0;
+			$this->addresses[$email]['activated'] = 1;
+
+			$i++;
+
+		}
+
+		// Save imported subscribers
+		$filename = $addonDataFolder."/addresses.dump";
+		gpFiles::SaveArray($filename,'addresses',$this->addresses);
+
+		if ($i > 1) {
+			message(sprintf('%s new subscribers have been successfully imported.', $i));
+		} elseif ($i == 1) {
+			message('One new subscriber has been successfully imported.');
+		} else {
+			message('No new subscriber has been imported.');
+		}
+
+		// Update config
+		$this->config['hide_import_form'] = intval($_POST['hide_import_form']);
+		$cfg_file = $addonPathData.'/config.php';	
+		if (gpFiles::SaveArray($cfg_file, 'cfg',$this->config) === false) {
+			message($langmessage['OOPS']);
+		}			
+
+	}
+
+	private function showEmailList() {
+
+		global $addonPathCode, $page;
+
+		// Css
+		$css	= '<style type="text/css">'
+			. '#EmailList{'
+			. '	margin-bottom: 30px;'
+			. '}'
+			. '#EasyNewsLetter_ImportForm{'
+			. '	margin-top: 0px;'
+			. '}'
+			. '#EasyNewsLetter_EmptyAddressFile legend,'
+			. '#EasyNewsLetter_ImportForm legend{'
+			. '	font-weight: bold;'
+			. '}'
+			. '#EasyNewsLetter_EmptyAddressFile fieldset,'
+			. '#EasyNewsLetter_ImportForm fieldset{'
+			. '	-webkit-border-radius: 8px;'
+			. '	-moz-border-radius: 8px;'
+			. '	border-radius: 8px;'
+			. '	padding: 10px;'
+			. '	border:1px solid #ccc;'
+			. '	margin: 0 0 10px 0;'
+			. '	position: relative'
+			. '}'
+			. '</style>'
+			;
+		$page->head .= $css;
+		
+		$tmpl = $addonPathCode.'/Admin/EmailList/EmailList_Tmpl.php';
+		include($tmpl);
+
+	}
+
+	private function _callbackAddonName($addon) {
+		return ($addon['name'] == 'Newsletter Plugin' ? true : false);
+	}
+
+
+}
+
+

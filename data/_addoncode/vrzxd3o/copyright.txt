@@ -1,0 +1,23 @@
+EasyNewsLetter is a fork of the Newsletter plugin.
+___________________________________
+
+EasyNewsLetter
+
+/**
+ * date:      24.09.2013
+ * author:    Frédéric Leroy
+ * copyright: Frédéric Leroy (info@fly06.fr)
+ */
+___________________________________
+
+Newsletter
+
+/**
+ * date:      19.02.2013
+ * author:    Martin Gürtel
+ * copyright: Martin Gürtel (guertel@web.de)
+ */
+
+
+
+

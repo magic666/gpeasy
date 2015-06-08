@@ -1,0 +1,9 @@
+#cal{border-spacing: 0px;border:1px solid #E9ECF0; padding:2px; width:100%;}
+#cal th{background-color: #FFFFFF; color:#666666;}
+#cal td{text-align: center; width:14%;border-top:1px solid #E9ECF0; border-left:1px solid #E9ECF0;}
+#cal img{border:0px;}
+#cal a{ text-decoration: none;}
+#monat, #monat a{background-color: #ffffff;color: #666666;}
+#monatevent a, #monatevent{background-color: #4169e1; color: #ffffff;}
+#amonat, #amonat a{background-color: #DDDDDD; color: #A4A4A4;}
+#aevent a, #aevent{background-color: #9DA6B0; color: #666666;}
